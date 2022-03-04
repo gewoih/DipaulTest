@@ -20,7 +20,7 @@
 		</Grid.RowDefinitions>
 
 		<Menu Grid.Row="0" FontSize="14">
-			<MenuItem Header="Загрузить XML"/>
+			<MenuItem Header="Загрузить XML" Command="{Binding LoadXmlCommand}"/>
 			<MenuItem Header="Сохранить XML"/>
 		</Menu>
 
@@ -39,7 +39,7 @@
 					</ContextMenu>
 				</GroupBox.ContextMenu>
 
-				<ListView ItemsSource="{Binding }" BorderThickness="0"/>
+				<ListView ItemsSource="{Binding Companies}" SelectedItem="{Binding SelectedCompany}" DisplayMemberPath="Name" BorderThickness="0"/>
 			</GroupBox>
 
 			<GroupBox Grid.Column="1" Header="Сотрудники" FontSize="12" BorderThickness="1" BorderBrush="Black">
@@ -51,7 +51,7 @@
 					</ContextMenu>
 				</GroupBox.ContextMenu>
 				
-				<ListView ItemsSource="{Binding }" BorderThickness="0"/>
+				<ListView ItemsSource="{Binding Employees}" SelectedItem="{Binding SelectedEmployee}" DisplayMemberPath="Name" BorderThickness="0"/>
 			</GroupBox>
 		</Grid>
 	</Grid>
