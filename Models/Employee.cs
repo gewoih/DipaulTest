@@ -4,7 +4,7 @@
 	{
 		public Company Company { get; }
 		public Role Role { get; }
-		public string Name { get; }
+		public string Name { get; set; }
 
 		public Employee(Company company, Role role, string name)
 		{

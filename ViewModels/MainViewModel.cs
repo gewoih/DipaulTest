@@ -3,11 +3,7 @@ using DipaulTest.Models;
 using DipaulTest.ViewModels.Base;
 using Microsoft.Win32;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Input;
 using System.Xml;
 
@@ -19,7 +15,6 @@ namespace DipaulTest.ViewModels
 		public MainViewModel()
 		{
 			this.Companies = new ObservableCollection<Company>();
-			this.Employees = new ObservableCollection<Employee>();
 			this.Roles = new ObservableCollection<Role>();
 
 			this.LoadXmlCommand = new RelayCommand(OnLoadXmlCommandExecuted, CanLoadXmlCommandExecute);
@@ -28,18 +23,13 @@ namespace DipaulTest.ViewModels
 		#endregion
 
 		#region Properties
+		private string OpenedXmlPath { get; set; }
+
 		private ObservableCollection<Company> _Companies;
 		public ObservableCollection<Company> Companies
 		{
 			get => _Companies;
 			set => Set(ref _Companies, value);
-		}
-
-		private ObservableCollection<Employee> _Employees;
-		public ObservableCollection<Employee> Employees
-		{
-			get => _Employees;
-			set => Set(ref _Employees, value);
 		}
 
 		private ObservableCollection<Role> _Roles;
@@ -53,11 +43,7 @@ namespace DipaulTest.ViewModels
 		public Company SelectedCompany
 		{
 			get => _SelectedCompany;
-			set
-			{
-				Set(ref _SelectedCompany, value);
-				this.Employees = new ObservableCollection<Employee>(this.SelectedCompany.Employees);
-			}
+			set => Set(ref _SelectedCompany, value);
 		}
 
 		private Employee _SelectedEmployee;
@@ -73,13 +59,17 @@ namespace DipaulTest.ViewModels
 		private bool CanLoadXmlCommandExecute(object p) => true;
 		private void OnLoadXmlCommandExecuted(object p)
 		{
+			this.ClearLoadedXmlData();
+
 			OpenFileDialog fileDialog = new OpenFileDialog();
 			fileDialog.Filter = "XML files (.xml)|*.xml";
 
 			if ((bool)fileDialog.ShowDialog())
 			{
+				this.OpenedXmlPath = fileDialog.FileName;
+
 				XmlDocument xDoc = new XmlDocument();
-				xDoc.Load(fileDialog.FileName);
+				xDoc.Load(this.OpenedXmlPath);
 
 				XmlElement xRoot = xDoc.DocumentElement;
 				if (xRoot == null)
@@ -109,10 +99,47 @@ namespace DipaulTest.ViewModels
 		}
 
 		public ICommand UpdateXmlCommand { get; }
-		private bool CanUpdateXmlCommandExecute(object p) => this.Companies != null;
+		private bool CanUpdateXmlCommandExecute(object p) => !String.IsNullOrEmpty(this.OpenedXmlPath);
 		private void OnUpdateXmlCommandExecuted(object p)
 		{
+			SaveFileDialog fileDialog = new SaveFileDialog();
+			fileDialog.Filter = "XML files (.xml)|*.xml";
 
+			if ((bool)fileDialog.ShowDialog())
+			{
+				XmlDocument xDoc = new XmlDocument();
+				xDoc.AppendChild(xDoc.CreateProcessingInstruction("xml", "version=\"1.0\" encoding=\"utf-8\""));
+				XmlElement xRoot = xDoc.CreateElement("root");
+				xDoc.AppendChild(xRoot);
+
+				foreach (var company in this.Companies)
+				{
+					XmlElement companyElement = xDoc.CreateElement("company");
+					companyElement.Attributes.Append(xDoc.CreateAttribute("name"));
+					companyElement.Attributes.GetNamedItem("name").InnerText = company.Name;
+
+					foreach (var employee in company.Employees)
+					{
+						XmlElement employeeElement = xDoc.CreateElement("employee");
+						employeeElement.Attributes.Append(xDoc.CreateAttribute("name"));
+						employeeElement.Attributes.GetNamedItem("name").InnerText = employee.Name;
+						employeeElement.InnerText = employee.Role.Name;
+
+						companyElement.AppendChild(employeeElement);
+					}
+					xDoc.DocumentElement.AppendChild(companyElement);
+				}
+				
+				xDoc.Save(fileDialog.FileName);
+			}
+		}
+		#endregion
+
+		#region Methods
+		private void ClearLoadedXmlData()
+		{
+			this.Companies.Clear();
+			this.Roles.Clear();
 		}
 		#endregion
 	}

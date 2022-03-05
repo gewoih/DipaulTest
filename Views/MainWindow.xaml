@@ -7,7 +7,8 @@
 		xmlns:vm="clr-namespace:DipaulTest.ViewModels"
         mc:Ignorable="d"
         Title="Dipaul Test Task" Height="350" Width="600"
-		FontSize="20">
+		FontSize="20"
+		WindowStartupLocation="CenterScreen">
 	
 	<Window.DataContext>
 		<vm:MainViewModel/>
@@ -21,7 +22,7 @@
 
 		<Menu Grid.Row="0" FontSize="14">
 			<MenuItem Header="Загрузить XML" Command="{Binding LoadXmlCommand}"/>
-			<MenuItem Header="Сохранить XML"/>
+			<MenuItem Header="Сохранить XML" Command="{Binding UpdateXmlCommand}"/>
 		</Menu>
 
 		<Grid Grid.Row="1">
@@ -39,7 +40,15 @@
 					</ContextMenu>
 				</GroupBox.ContextMenu>
 
-				<ListView ItemsSource="{Binding Companies}" SelectedItem="{Binding SelectedCompany}" DisplayMemberPath="Name" BorderThickness="0"/>
+				<ListView ItemsSource="{Binding Companies, UpdateSourceTrigger=PropertyChanged}" SelectedItem="{Binding SelectedCompany}" BorderThickness="0">
+					<ListView.ItemTemplate>
+						<DataTemplate>
+							<StackPanel Orientation="Horizontal">
+								<TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Margin="2"/>
+							</StackPanel>
+						</DataTemplate>
+					</ListView.ItemTemplate>
+				</ListView>
 			</GroupBox>
 
 			<GroupBox Grid.Column="1" Header="Сотрудники" FontSize="12" BorderThickness="1" BorderBrush="Black">
@@ -50,8 +59,17 @@
 						<MenuItem Header="Удалить сотрудника"/>
 					</ContextMenu>
 				</GroupBox.ContextMenu>
-				
-				<ListView ItemsSource="{Binding Employees}" SelectedItem="{Binding SelectedEmployee}" DisplayMemberPath="Name" BorderThickness="0"/>
+
+				<ListView ItemsSource="{Binding SelectedCompany.Employees}" SelectedItem="{Binding SelectedEmployee}" BorderThickness="0">
+					<ListView.ItemTemplate>
+						<DataTemplate>
+							<StackPanel Orientation="Horizontal">
+								<TextBox Text="{Binding Name}" Width="100" Margin="2"/>
+								<TextBox Text="{Binding Role.Name}" Width="150" Margin="2"/>
+							</StackPanel>
+						</DataTemplate>
+					</ListView.ItemTemplate>
+				</ListView>
 			</GroupBox>
 		</Grid>
 	</Grid>
