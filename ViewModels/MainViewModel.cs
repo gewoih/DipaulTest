@@ -1,6 +1,7 @@
 ﻿using DipaulTest.Commands;
 using DipaulTest.Models;
 using DipaulTest.ViewModels.Base;
+using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -72,31 +73,36 @@ namespace DipaulTest.ViewModels
 		private bool CanLoadXmlCommandExecute(object p) => true;
 		private void OnLoadXmlCommandExecuted(object p)
 		{
-			XmlDocument xDoc = new XmlDocument();
-			xDoc.Load("Companies.xml");
+			OpenFileDialog fileDialog = new OpenFileDialog();
+			fileDialog.Filter = "XML files (.xml)|*.xml";
 
-			XmlElement xRoot = xDoc.DocumentElement;
-			if (xRoot != null)
+			if ((bool)fileDialog.ShowDialog())
 			{
+				XmlDocument xDoc = new XmlDocument();
+				xDoc.Load(fileDialog.FileName);
+
+				XmlElement xRoot = xDoc.DocumentElement;
+				if (xRoot == null)
+					return;
+				
 				foreach (XmlElement xNode in xRoot)
 				{
-					if (xNode.Name == "companies")
+					if (xNode.Name != "companies")
+						continue;
+
+					foreach (XmlNode companyNode in xNode.ChildNodes)
 					{
-						foreach (XmlNode companyNode in xNode.ChildNodes)
+						if (companyNode.Name != "company")
+							continue;
+						
+						Company newCompany = new Company(companyNode.Attributes.GetNamedItem("name").Value);
+						foreach (XmlNode employeeNode in companyNode.ChildNodes)
 						{
-							if (companyNode.Name == "company")
-							{
-								Company newCompany = new Company(companyNode.Attributes.GetNamedItem("name").Value);
-
-								foreach (XmlNode employeeNode in companyNode.ChildNodes)
-								{
-									if (employeeNode.Name == "employee")
-										newCompany.Employees.Add(new Employee(newCompany, new Role(employeeNode.InnerText), employeeNode.Attributes.GetNamedItem("name").Value));
-								}
-
-								this.Companies.Add(newCompany);
-							}
+							if (employeeNode.Name == "employee")
+								newCompany.Employees.Add(new Employee(newCompany, new Role(employeeNode.InnerText), employeeNode.Attributes.GetNamedItem("name").Value));
 						}
+
+						this.Companies.Add(newCompany);
 					}
 				}
 			}
