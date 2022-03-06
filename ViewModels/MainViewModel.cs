@@ -5,7 +5,7 @@ using Microsoft.Win32;
 using System;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
-using System.Xml;
+using System.Xml.Linq;
 
 namespace DipaulTest.ViewModels
 {
@@ -68,38 +68,28 @@ namespace DipaulTest.ViewModels
 			{
 				this.OpenedXmlPath = fileDialog.FileName;
 
-				XmlDocument xDoc = new XmlDocument();
-				xDoc.Load(this.OpenedXmlPath);
-
-				XmlElement xRoot = xDoc.DocumentElement;
+				XDocument xDoc = XDocument.Load(this.OpenedXmlPath);
+				XElement xRoot = xDoc.Element("root");
 				if (xRoot == null)
-					return;
-				
-				foreach (XmlElement xNode in xRoot)
+					throw new Exception("В файле не найден корневой элемент 'root'!");
+
+				XElement xCompanies = xRoot.Element("companies");
+				if (xCompanies == null)
+					throw new Exception("В файле не найден корневой элемент 'companies'!");
+
+				foreach (var companyNode in xCompanies.Elements("company"))
 				{
-					if (xNode.Name != "companies")
-						continue;
-
-					foreach (XmlNode companyNode in xNode.ChildNodes)
-					{
-						if (companyNode.Name != "company")
-							continue;
-						
-						Company newCompany = new Company(companyNode.Attributes.GetNamedItem("name").Value);
-						foreach (XmlNode employeeNode in companyNode.ChildNodes)
-						{
-							if (employeeNode.Name == "employee")
-								newCompany.Employees.Add(new Employee(newCompany, new Role(employeeNode.InnerText), employeeNode.Attributes.GetNamedItem("name").Value));
-						}
-
-						this.Companies.Add(newCompany);
-					}
+					Company newCompany = new Company(companyNode.Attribute("name").Value);
+					foreach (var employeeNode in companyNode.Elements("employee"))
+						newCompany.Employees.Add(new Employee(newCompany, new Role(employeeNode.Value), employeeNode.Attribute("name").Value));
+					
+					this.Companies.Add(newCompany);
 				}
 			}
 		}
 
 		public ICommand UpdateXmlCommand { get; }
-		private bool CanUpdateXmlCommandExecute(object p) => !String.IsNullOrEmpty(this.OpenedXmlPath);
+		private bool CanUpdateXmlCommandExecute(object p) => !String.IsNullOrEmpty(this.OpenedXmlPath) && this.Companies.Count != 0;
 		private void OnUpdateXmlCommandExecuted(object p)
 		{
 			SaveFileDialog fileDialog = new SaveFileDialog();
@@ -107,29 +97,31 @@ namespace DipaulTest.ViewModels
 
 			if ((bool)fileDialog.ShowDialog())
 			{
-				XmlDocument xDoc = new XmlDocument();
-				xDoc.AppendChild(xDoc.CreateProcessingInstruction("xml", "version=\"1.0\" encoding=\"utf-8\""));
-				XmlElement xRoot = xDoc.CreateElement("root");
-				xDoc.AppendChild(xRoot);
+				XDocument xDoc = new XDocument();
+				XElement xCompanies = new XElement("companies");
 
 				foreach (var company in this.Companies)
 				{
-					XmlElement companyElement = xDoc.CreateElement("company");
-					companyElement.Attributes.Append(xDoc.CreateAttribute("name"));
-					companyElement.Attributes.GetNamedItem("name").InnerText = company.Name;
+					XElement companyElement = new XElement("company");
+					companyElement.Add(new XAttribute("name", company.Name));
 
 					foreach (var employee in company.Employees)
 					{
-						XmlElement employeeElement = xDoc.CreateElement("employee");
-						employeeElement.Attributes.Append(xDoc.CreateAttribute("name"));
-						employeeElement.Attributes.GetNamedItem("name").InnerText = employee.Name;
-						employeeElement.InnerText = employee.Role.Name;
+						XElement employeeElement = new XElement("employee");
+						employeeElement.Add(new XAttribute("name", employee.Name));
 
-						companyElement.AppendChild(employeeElement);
+						if (!String.IsNullOrEmpty(employee.Role.Name))
+							employeeElement.Value = employee.Role.Name;
+
+						companyElement.Add(employeeElement);
 					}
-					xDoc.DocumentElement.AppendChild(companyElement);
+					xCompanies.Add(companyElement);
 				}
-				
+
+				XElement xRoot = new XElement("root");
+				xRoot.Add(xCompanies);
+
+				xDoc.Add(xRoot);
 				xDoc.Save(fileDialog.FileName);
 			}
 		}

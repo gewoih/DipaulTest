@@ -64,8 +64,8 @@
 					<ListView.ItemTemplate>
 						<DataTemplate>
 							<StackPanel Orientation="Horizontal">
-								<TextBox Text="{Binding Name}" Width="100" Margin="2"/>
-								<TextBox Text="{Binding Role.Name}" Width="150" Margin="2"/>
+								<TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Width="100" Margin="2"/>
+								<TextBox Text="{Binding Role.Name, UpdateSourceTrigger=PropertyChanged}" Width="150" Margin="2"/>
 							</StackPanel>
 						</DataTemplate>
 					</ListView.ItemTemplate>

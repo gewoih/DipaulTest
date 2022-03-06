@@ -5,7 +5,7 @@ namespace DipaulTest.Models
 	public class Company
 	{
 		public string Name { get; set; }
-		public ICollection<Employee> Employees { get; }
+		public ICollection<Employee> Employees { get; set; }
 
 		public Company(string name)
 		{
